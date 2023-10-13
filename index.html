@@ -19,7 +19,7 @@ player.configure({
   drm: {
     clearKeys: {
       // 'key-id-in-hex': 'key-in-hex',
-     '3afe30ee4ea24a67fe5a2ef06e83db0b': '27a2f71d87bf5eb105af096fb6605d97'
+     '3bc3f0e518aed92e80a98118e5bc2c10': '5fce364fbc4499856597b19a96f44648''
     }
   }
 });
@@ -28,7 +28,7 @@ window.player = player;
 window.ui = ui; 
 player.addEventListener('error', onPlayerErrorEvent); 
 controls.addEventListener('error', onUIErrorEvent); 
-try{await player.load('https://unifi-live01.secureswiftcontent.com/UnifiHD/live03.mpd'); 
+try{await player.load('https://linearjitp-playback.astro.com.my/dash-wv/linear/809/default.mpd'); 
 console.log('The video has now been loaded!');} catch (error) {onPlayerError(error);}} 
 function onPlayerErrorEvent(errorEvent) {onPlayerError(event.detail);} 
 function onPlayerError(error) {console.error('Error code', error.code, 'object', error);} 
