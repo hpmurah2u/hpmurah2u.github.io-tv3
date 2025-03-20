@@ -13,14 +13,33 @@
             margin: 0;
             background-color: #000;
         }
-        video {
+        .video-container {
+            position: relative;
             max-width: 100%;
             max-height: 100%;
+        }
+        video {
+            width: 100%;
+            height: auto;
+        }
+        .watermark {
+            position: absolute;
+            top: 20px; /* Jarak dari atas */
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 15px;
+            font-weight: bold;
+            color: rgba(255, 255, 255, 0.5); /* Warna teks dengan transparansi */
+            z-index: 10;
+            pointer-events: none; /* Agar tidak mengganggu interaksi dengan video */
         }
     </style>
 </head>
 <body>
-    <video id="videoPlayer" controls autoplay></video>
+    <div class="video-container">
+        <div class="watermark">EJALTV</div>
+        <video id="videoPlayer" controls autoplay></video>
+    </div>
 
     <!-- Load hls.js library -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
