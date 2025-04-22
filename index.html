@@ -2,23 +2,19 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>TV3 Live Player</title>
+  <title>TV3 Live</title>
   <link href="https://vjs.zencdn.net/8.9.0/video-js.css" rel="stylesheet" />
 
   <style>
     body {
       background-color: #000;
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
       margin: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
-    h1 {
-      margin-bottom: 20px;
-    }
+
     .video-container {
       width: 90%;
       max-width: 960px;
@@ -27,15 +23,25 @@
 </head>
 <body>
 
-  <h1>TV3 Live Streaming</h1>
-
   <div class="video-container">
-    <video id="tv3-player" class="video-js vjs-default-skin" controls preload="auto" width="960" height="540" data-setup='{}'>
+    <video id="tv3-player" class="video-js vjs-default-skin" controls autoplay muted preload="auto" data-setup='{}'>
       <source src="https://live-ssar-01.tonton.com.my/stream-tv3/master_1080.m3u8?bpkio_serviceid=6c0958d82a830a02ca0936d9cfab8311&bpkio_sessionid=&category=all&mm_sp" type="application/x-mpegURL" />
       Your browser does not support the video tag.
     </video>
   </div>
 
   <script src="https://vjs.zencdn.net/8.9.0/video.min.js"></script>
+  <script>
+    const player = videojs('tv3-player');
+
+    player.ready(() => {
+      player.play().then(() => {
+        // Cuba unmute lepas main
+        player.muted(false);
+      }).catch((err) => {
+        console.log("Autoplay or unmute blocked:", err);
+      });
+    });
+  </script>
 </body>
 </html>
