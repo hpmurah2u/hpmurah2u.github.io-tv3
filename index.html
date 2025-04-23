@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>TV3</title>
+  <title>EJALTV Player</title>
   <style>
     body {
       margin: 0;
@@ -29,20 +29,21 @@
       top: 10px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(0, 0, 0, 0.4);
-      color: white;
-      padding: 4px 10px;
-      font-size: 16px;
-      font-family: Arial, sans-serif;
-      border-radius: 5px;
       z-index: 10;
+    }
+
+    .logo-overlay img {
+      height: 30px;
+      opacity: 0.8;
     }
   </style>
 </head>
 <body>
 
   <div class="video-container">
-    <div class="logo-overlay">EJALTV</div>
+    <div class="logo-overlay">
+      <img src="https://github.com/hpmurah2u/pejal/blob/PEJAL/logo%20ejal%20tv%20baru.png?raw=true" alt="EJALTV Logo">
+    </div>
     <video id="video" controls autoplay muted playsinline></video>
   </div>
 
@@ -51,7 +52,6 @@
     const video = document.getElementById('video');
     const hls = new Hls();
 
-    // You can choose a different resolution URL if needed
     const streamUrl = 'https://live-ssar-01.tonton.com.my/stream-tv3/master_720.m3u8?bpkio_serviceid=6c0958d82a830a02ca0936d9cfab8311&bpkio_sessionid=&category=all&mm_sp';
 
     if (Hls.isSupported()) {
@@ -61,7 +61,6 @@
       video.src = streamUrl;
     }
 
-    // Optional: Start playing immediately once it's ready
     video.addEventListener('canplay', () => {
       video.play();
     });
