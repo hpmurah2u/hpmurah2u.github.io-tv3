@@ -62,7 +62,11 @@
     }
 
     video.addEventListener('canplay', () => {
-      video.play();
+      video.play().then(() => {
+        video.muted = false; // cuba auto unmute selepas play
+      }).catch((err) => {
+        console.warn('Autoplay dengan bunyi gagal:', err);
+      });
     });
   </script>
 </body>
