@@ -2,45 +2,68 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>TV3 Live</title>
-  <link href="https://vjs.zencdn.net/8.9.0/video-js.css" rel="stylesheet" />
-
+  <title>TV3</title>
   <style>
     body {
-      background-color: #000;
       margin: 0;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      background-color: #000;
     }
 
     .video-container {
-      width: 90%;
-      max-width: 960px;
+      position: relative;
+      width: 100%;
+      max-width: 100%;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #000;
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .logo-overlay {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.4);
+      color: white;
+      padding: 4px 10px;
+      font-size: 16px;
+      font-family: Arial, sans-serif;
+      border-radius: 5px;
+      z-index: 10;
     }
   </style>
 </head>
 <body>
 
   <div class="video-container">
-    <video id="tv3-player" class="video-js vjs-default-skin" controls autoplay muted preload="auto" data-setup='{}'>
-      <source src="https://live-ssar-01.tonton.com.my/stream-tv3/master_1080.m3u8?bpkio_serviceid=6c0958d82a830a02ca0936d9cfab8311&bpkio_sessionid=&category=all&mm_sp" type="application/x-mpegURL" />
-      Your browser does not support the video tag.
-    </video>
+    <div class="logo-overlay">EJALTV</div>
+    <video id="video" controls autoplay muted playsinline></video>
   </div>
 
-  <script src="https://vjs.zencdn.net/8.9.0/video.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <script>
-    const player = videojs('tv3-player');
+    const video = document.getElementById('video');
+    const hls = new Hls();
 
-    player.ready(() => {
-      player.play().then(() => {
-        // Cuba unmute lepas main
-        player.muted(false);
-      }).catch((err) => {
-        console.log("Autoplay or unmute blocked:", err);
-      });
+    // You can choose a different resolution URL if needed
+    const streamUrl = 'https://live-ssar-01.tonton.com.my/stream-tv3/master_720.m3u8?bpkio_serviceid=6c0958d82a830a02ca0936d9cfab8311&bpkio_sessionid=&category=all&mm_sp';
+
+    if (Hls.isSupported()) {
+      hls.loadSource(streamUrl);
+      hls.attachMedia(video);
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      video.src = streamUrl;
+    }
+
+    // Optional: Start playing immediately once it's ready
+    video.addEventListener('canplay', () => {
+      video.play();
     });
   </script>
 </body>
