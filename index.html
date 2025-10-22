@@ -1,73 +1,228 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="ms">
 <head>
-  <meta charset="UTF-8">
-  <title>TV3LIVE</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Embedded HLS player with ClearKey</title>
   <style>
-    body {
-      margin: 0;
-      background-color: #000;
-    }
-
-    .video-container {
-      position: relative;
-      width: 100%;
-      max-width: 100%;
-      height: 100vh;
-      overflow: hidden;
-      background-color: #000;
-    }
-
-    video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .logo-overlay {
-      position: absolute;
-      top: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 10;
-    }
-
-    .logo-overlay img {
-      height: 30px;
-      opacity: 0.8;
-    }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; display:flex; align-items:center; justify-content:center; height:100vh; background:#111; color:#eee; margin:0; }
+    .player-wrap { width: 880px; max-width:95%; }
+    video { width:100%; height: 496px; background: #000; border-radius:8px; outline:none; }
+    .controls { display:flex; gap:8px; margin-top:8px; align-items:center; }
+    button, select { padding:8px 12px; border-radius:6px; border:1px solid #333; background:#222; color:#fff; cursor:pointer; }
+    button:hover { opacity:0.9; }
+    .status { margin-left:12px; font-size:0.9rem; color:#bdbdbd; }
   </style>
 </head>
 <body>
-
-  <div class="video-container">
-    <div class="logo-overlay">
-      <img src="https://github.com/hpmurah2u/pejal/blob/PEJAL/logo%20ejal%20tv%20baru.png?raw=true" alt="EJALTV Logo">
+  <div class="player-wrap">
+    <video id="player" controls playsinline webkit-playsinline></video>
+    <div class="controls">
+      <button id="btnPlay">Play / Pause</button>
+      <button id="btnMute">Mute / Unmute</button>
+      <select id="sourceSelect">
+        <option value="default">Default Source</option>
+        <option value="fallback">Fallback Source</option>
+      </select>
+      <button id="btnReload">Reload Source</button>
+      <div class="status" id="status">Ready</div>
     </div>
-    <video id="video" controls autoplay muted playsinline></video>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <!-- hls.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.1/dist/hls.min.js"></script>
+
   <script>
-    const video = document.getElementById('video');
-    const hls = new Hls();
+  (function(){
+    // --- CONFIG: gantikan / tambah jika perlu ---
+    const clearKeys = {
+      '3bc3f0e518aed92e80a98118e5bc2c10': '5fce364fbc4499856597b19a96f44648',
+      'R6Ega0SCLIkyDnCRbPV7DA': '4EDKKqQm33ibo4S6VhiRtA'
+    };
 
-    const streamUrl = 'https://live-ssar-02.tonton.com.my/1750168838/0xe9ff1e3bfdd5178c87979fa27a1ca2a6222dd3ecda2592d8e26acd4bcb0cf7f0/stream-tv3/master.m3u8?bpkio_serviceid=6c0958d82a830a02ca0936d9cfab8311&did=d6dbd81d-bfdc-a2aa-496f-a6a491735074&dnt=0&ifatype=sessionid&plt=web&lot_auds=ca_006,ca_364,ca_200,ca_419,ca_730,ca_1101,ca_239,ca_994,ca_015,ca_355,ca_075,ca_215,ca_797,ca_305,ca_362,ca_351,ca_972,ca_803,ca_773,ca_357,ca_786,ca_058,ca_338,,ca_329,ca_420,ca_360,ca_069,ca_080,ca_394,ca_1007,ca_1096,ca_072,ca_441,ca_335,ca_350,ca_336,ca_348,ca_074,ca_358,ca_344,ca_724,all,ca_1034,ca_288,ca_302,ca_363,ca_378,ca_356,ca_365,ca_1011,ca_384,ca_1056,ca_353,ca_354,ca_897,ca_051,ca_1040,ca_027,ca_068,ca_1035,ca_330,ca_775,ca_672,ca_381,ca_304&ttd_uid2=A4AAABJpPZCDRsaMj4JUjQB_TiiTZtqyO3CkbfTlaHATnS_gZSeFKatEHmm0_cLWNw9zuC8Im99tOkaKXemv6Oo7k8HYuy6R35tZkybxz6HNaUiqbAI7mWg1ENbz9eGY6yhlUuEL2bJ96yFMVfw8pqEa-woYA8Sym_sKQ6VOdmkL31vK0eVTUoH-9YyHsWy7XUUaiLkPELXxpUB2Ualjnu6Cbw&bpkio_sessionid=10a3f33b24-996245f9-124c-4c34-aae6-b03f6a191dc5&category=all';
+    const defaultSource = 'https://mifntechnology.github.io/siaranMy/channels/Tv3/manifest.m3u8?Auth_key=3bc3f0e518aed92e80a98118e5bc2c10&Token=5fce364fbc4499856597b19a96f44648';
+    const fallbackSource = 'https://linearjitp-playback.astro.com.my/hls-mp4-fp/linear/809/165/video-cif-stream-4.m3u8';
+    // -------------------------------------------
 
-    if (Hls.isSupported()) {
-      hls.loadSource(streamUrl);
-      hls.attachMedia(video);
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = streamUrl;
+    const video = document.getElementById('player');
+    const statusEl = document.getElementById('status');
+    const btnPlay = document.getElementById('btnPlay');
+    const btnMute = document.getElementById('btnMute');
+    const sourceSelect = document.getElementById('sourceSelect');
+    const btnReload = document.getElementById('btnReload');
+
+    let hls = null;
+    let currentSource = defaultSource;
+
+    // Utility: hex -> base64url
+    function hexToBase64Url(hex) {
+      // Accept also already base64-like strings: detect non-hex characters
+      if (!/^[0-9a-fA-F]+$/.test(hex)) {
+        // assume it's already base64 or id string -> try encode UTF-8 then base64url
+        const u8 = new TextEncoder().encode(hex);
+        let b64 = btoa(String.fromCharCode(...u8));
+        return b64.replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+      }
+      const bytes = new Uint8Array(hex.length/2);
+      for (let i=0;i<bytes.length;i++){
+        bytes[i] = parseInt(hex.substr(i*2,2),16);
+      }
+      let binary = '';
+      for (let i=0;i<bytes.length;i++) binary += String.fromCharCode(bytes[i]);
+      let b64 = btoa(binary);
+      return b64.replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
     }
 
-    video.addEventListener('canplay', () => {
-      video.play().then(() => {
-        video.muted = false; // cuba auto unmute selepas play
-      }).catch((err) => {
-        console.warn('Autoplay dengan bunyi gagal:', err);
-      });
+    // Build ClearKey license JSON (base64url keys)
+    function buildClearKeyLicense() {
+      const keys = [];
+      for (const kidHex in clearKeys) {
+        const kHex = clearKeys[kidHex];
+        const kid_b64 = hexToBase64Url(kidHex);
+        const k_b64 = hexToBase64Url(kHex);
+        keys.push({ kty: "oct", kid: kid_b64, k: k_b64 });
+      }
+      return JSON.stringify({ keys });
+    }
+
+    // Attach ClearKey via EME: create MediaKeys and session then respond on 'message'
+    async function setupClearKeysForVideo() {
+      if (!window.navigator.requestMediaKeySystemAccess) {
+        console.warn('EME not supported in this browser.');
+        return false;
+      }
+      const config = [{
+        initDataTypes: ['keyids', 'cenc'],
+        audioCapabilities: [{ contentType: 'audio/mp4; codecs="mp4a.40.2"' }],
+        videoCapabilities: [{ contentType: 'video/mp4; codecs="avc1.42E01E"' }]
+      }];
+      try {
+        const access = await navigator.requestMediaKeySystemAccess('org.w3.clearkey', config);
+        const mediaKeys = await access.createMediaKeys();
+        await video.setMediaKeys(mediaKeys);
+
+        const session = mediaKeys.createSession();
+        session.addEventListener('message', async (ev) => {
+          // when message arrives (challenge), we reply with our ClearKey JSON license
+          try {
+            const licenseStr = buildClearKeyLicense();
+            const licenseUint8 = new TextEncoder().encode(licenseStr);
+            await session.update(licenseUint8);
+            setStatus('ClearKey license applied.');
+          } catch (err) {
+            console.error('Failed to update session with license:', err);
+            setStatus('ClearKey license update failed: ' + (err.message||err));
+          }
+        });
+
+        // generateRequest with initData listing the kids
+        const kids = Object.keys(clearKeys).map(k => hexToBase64Url(k));
+        const initObj = { kids };
+        const initData = new TextEncoder().encode(JSON.stringify(initObj));
+        await session.generateRequest('keyids', initData);
+        setStatus('EME ClearKey session created.');
+        return true;
+      } catch (err) {
+        console.warn('requestMediaKeySystemAccess failed:', err);
+        setStatus('EME ClearKey not available: ' + (err.message||err));
+        return false;
+      }
+    }
+
+    // set status text
+    function setStatus(t) { statusEl.textContent = t; }
+
+    // Load source: tries hls.js if needed, otherwise native
+    async function loadSource(url) {
+      cleanupHls();
+      setStatus('Loading source...');
+      // try to set up ClearKey first (best effort)
+      await setupClearKeysForVideo();
+
+      if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        // native HLS (Safari)
+        video.src = url;
+        try {
+          await video.load();
+          setStatus('Using native HLS.');
+        } catch(e){ setStatus('Native load error: ' + e.message); }
+        return;
+      }
+
+      if (Hls.isSupported()) {
+        hls = new Hls({
+          // enable EME usage if required by segments (hls.js will forward init data)
+          enableWorker: true
+        });
+        hls.on(Hls.Events.ERROR, function(event, data) {
+          console.error('hls.js error', data);
+          setStatus('hls.js error: ' + data.type + ' ' + (data.details||''));
+          // On fatal error, try fallback
+          if (data.fatal) {
+            setStatus('hls.js fatal error, trying fallback source...');
+            if (currentSource !== fallbackSource) {
+              currentSource = fallbackSource;
+              sourceSelect.value = 'fallback';
+              loadSource(currentSource);
+            }
+          }
+        });
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MEDIA_ATTACHED, function() {
+          hls.loadSource(url);
+          setStatus('Using hls.js player.');
+        });
+      } else {
+        // not supported - set src directly and hope for the best
+        video.src = url;
+        setStatus('Browser cannot play HLS (no hls.js support).');
+      }
+    }
+
+    function cleanupHls(){
+      if (hls) {
+        try { hls.destroy(); } catch(e){}
+        hls = null;
+      }
+      // clear src
+      try { video.removeAttribute('src'); video.load(); } catch(e){}
+    }
+
+    // Buttons
+    btnPlay.addEventListener('click', () => {
+      if (video.paused) { video.play(); btnPlay.textContent = 'Pause'; }
+      else { video.pause(); btnPlay.textContent = 'Play'; }
     });
+    btnMute.addEventListener('click', () => {
+      video.muted = !video.muted;
+      btnMute.textContent = video.muted ? 'Unmute' : 'Mute';
+    });
+    sourceSelect.addEventListener('change', (ev) => {
+      const v = ev.target.value;
+      currentSource = (v === 'fallback') ? fallbackSource : defaultSource;
+      setStatus('Pilih sumber: ' + (v === 'fallback' ? 'Fallback' : 'Default'));
+    });
+    btnReload.addEventListener('click', () => {
+      loadSource(currentSource);
+    });
+
+    // initial load
+    (async function init(){
+      currentSource = defaultSource;
+      sourceSelect.value = 'default';
+      await loadSource(currentSource);
+      // autoplay muted on load to allow autoplay policy in many browsers
+      video.muted = true;
+      try { await video.play(); btnPlay.textContent = 'Pause'; setStatus('Playing (muted).'); } catch(e) { setStatus('Ready (click play).'); btnPlay.textContent = 'Play'; }
+    })();
+
+    // show debug on video events
+    video.addEventListener('error', (ev) => {
+      console.error('Video element error:', video.error);
+      setStatus('Video error: ' + (video.error && video.error.message ? video.error.message : video.error?.code || 'unknown'));
+    });
+
+  })();
   </script>
 </body>
 </html>
